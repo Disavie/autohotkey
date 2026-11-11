@@ -1,0 +1,5 @@
+#Requires AutoHotkey v2.0
+
+#1::Send "^#{Left}"
+#2::Send "^#{Right}"
+#o::Send "#{Tab}"

@@ -1,0 +1,50 @@
+#Enter::
+{
+    Run 'wt.exe -w new -d C:\Users\davis\'
+    WinWait "ahk_exe WindowsTerminal.exe"
+    WinActivate "ahk_exe WindowsTerminal.exe"
+}
+#Q::Send "!{F4}"
+#F::Send "{F11}"
+#e::
+{
+	if (WinGetMinMax("A") = 1)
+		WinRestore "A"
+	else
+		WinMaximize "A"
+}
+
+#l::FocusAdjacentWindow("right")
+#h::FocusAdjacentWindow("left")
+#k::FocusAdjacentWindow("right")
+#j::FocusAdjacentWindow("left")
+
+FocusAdjacentWindow(direction) {
+    WinGetPos &cx, &cy, &cw, &ch, "A"
+    current := WinExist("A")
+
+    best := 0
+    bestDist := 999999
+
+    for hwnd in WinGetList() {
+        if (hwnd = current || !DllCall("IsWindowVisible", "Ptr", hwnd))
+            continue
+
+        WinGetPos &x, &y, &w, &h, "ahk_id " hwnd
+
+        if (direction = "left" && x + w <= cx)
+            dist := cx - (x + w)
+        else if (direction = "right" && x >= cx + cw)
+            dist := x - (cx + cw)
+        else
+            continue
+
+        if (dist < bestDist) {
+            bestDist := dist
+            best := hwnd
+        }
+    }
+
+    if best
+        WinActivate "ahk_id " best
+}
