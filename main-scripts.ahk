@@ -1,46 +1,5 @@
 #Requires AutoHotkey v2.0
-; Switch to numbers virtual desktops
-#1::SwitchToDesktop(0)
-#2::SwitchToDesktop(1)
-#3::SwitchToDesktop(2)
-
-global dll := A_ScriptDir "\VirtualDesktopAccessor.dll"
-global PrevWindows := Map()
-global CurrentDesktop := DllCall(dll "\GetWindowDesktopNumber", "Ptr", WinExist("A"), "Int")
-
-DllCall("LoadLibrary", "Str", dll, "Ptr")
-
-SwitchToDesktop(num) {
-    global dll, CurrentDesktop, PrevWindows
-    ; Save current window to return when we come back to this virtal desktop
-    hand := WinExist("A") ;gets most recent window
-    if hand
-        PrevWindows[CurrentDesktop] := hand
-    ; Switch desktops
-    DllCall(dll "\GoToDesktopNumber", "Int", num, "Int")
-    CurrentDesktop := num
-    Sleep(150)
-
-    if PrevWindows.has(num) {
-        hand := PrevWindows[num]
-        if WinExist("ahk_id " hand)
-            WinActivate("ahk_id " hand)
-    }
-}
-
-#+1::MoveCurrentWindowToDesktopNum(0)
-#+2::MoveCurrentWindowToDesktopNum(1)
-#+3::MoveCurrentWindowToDesktopNum(2)
-MoveCurrentWindowToDesktopNum(num) {
-    global dll 
-    hand := WinExist("A")
-    DllCall(dll "\MoveWindowToDesktopNumber", "Ptr", hand, "Int", num)
-}
-
-
 #o::Send "#{Tab}"
-
-
 #Enter::
 {
     Run 'wt.exe -w new -d C:\Users\davis\'
@@ -57,37 +16,3 @@ MoveCurrentWindowToDesktopNum(num) {
 		WinMaximize "A"
 }
 
-#l::FocusAdjacentWindow("right")
-#h::FocusAdjacentWindow("left")
-#k::FocusAdjacentWindow("right")
-#j::FocusAdjacentWindow("left")
-
-FocusAdjacentWindow(direction) {
-    WinGetPos &cx, &cy, &cw, &ch, "A"
-    current := WinExist("A")
-
-    best := 0
-    bestDist := 999999
-
-    for hwnd in WinGetList() {
-        if (hwnd = current || !DllCall("IsWindowVisible", "Ptr", hwnd))
-            continue
-
-        WinGetPos &x, &y, &w, &h, "ahk_id " hwnd
-
-        if (direction = "left" && x + w <= cx)
-            dist := cx - (x + w)
-        else if (direction = "right" && x >= cx + cw)
-            dist := x - (cx + cw)
-        else
-            continue
-
-        if (dist < bestDist) {
-            bestDist := dist
-            best := hwnd
-        }
-    }
-
-    if best
-        WinActivate "ahk_id " best
-}
