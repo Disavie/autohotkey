@@ -14,7 +14,9 @@ global CurrentDesktop := 0
 DllCall("LoadLibrary", "Str", dll, "Ptr")
 
 DetectHiddenWindows(true)
+
 InitDesktopWindows()
+InstallWindowHooks()
 
 ; init
 InitDesktopWindows(){
@@ -210,3 +212,150 @@ CycleWindowFocus(direction) {
     if WinExist("ahk_id " hwnd)
         WinActivate("ahk_id " hwnd)
 }
+
+global hWindowEventHook := 0
+global hForegroundHook := 0
+global WindowEventCallback := 0
+
+InstallWindowHooks() {
+    global WindowEventCallback
+    global hWindowEventHook, hForegroundHook
+
+    ; Keep callback alive for as long as the hooks exist
+    WindowEventCallback := CallbackCreate(HandleWinEvent, , 7)
+
+    ; Window create, destroy, and show events
+    hWindowEventHook := DllCall(
+        "SetWinEventHook",
+        "UInt", 0x8000, ; EVENT_OBJECT_CREATE
+        "UInt", 0x8002, ; EVENT_OBJECT_SHOW
+        "Ptr", 0,
+        "Ptr", WindowEventCallback,
+        "UInt", 0,
+        "UInt", 0,
+        "UInt", 0,
+        "Ptr"
+    )
+
+    ; Foreground window changes
+    hForegroundHook := DllCall(
+        "SetWinEventHook",
+        "UInt", 0x0003, ; EVENT_SYSTEM_FOREGROUND
+        "UInt", 0x0003,
+        "Ptr", 0,
+        "Ptr", WindowEventCallback,
+        "UInt", 0,
+        "UInt", 0,
+        "UInt", 0,
+        "Ptr"
+    )
+}
+
+
+HandleWinEvent(hHook, event, hwnd, idObject, idChild, thread, time) {
+    ; Only interested in actual top-level windows
+    if (!hwnd || idObject != 0 || idChild != 0)
+        return
+
+    if (DllCall("GetAncestor", "Ptr", hwnd, "UInt", 2, "Ptr") != hwnd)
+        return
+
+    switch event {
+        case 0x8000: ; CREATE
+            SetTimer(AddWindowToStack.Bind(hwnd), -300)
+
+        case 0x8002: ; SHOW
+            SetTimer(AddWindowToStack.Bind(hwnd), -100)
+
+        case 0x8001: ; DESTROY
+            SetTimer(RemoveWindowFromStack.Bind(hwnd), -50)
+
+        case 0x0003: ; FOREGROUND
+            SetTimer(UpdateFocusedWindow.Bind(hwnd), -50)
+    }
+}
+
+AddWindowToStack(hwnd) {
+    global dll, DesktopWindows, FocusIndex
+
+    if !WinExist("ahk_id " hwnd)
+        return
+
+    if !DllCall("IsWindowVisible", "Ptr", hwnd)
+        return
+
+    ; Determine which desktop owns this window
+    desktop := DllCall(
+        dll "\GetWindowDesktopNumber",
+        "Ptr", hwnd,
+        "Int"
+    )
+
+    if !DesktopWindows.Has(desktop)
+        return
+
+    windows := DesktopWindows[desktop]
+
+    ; Don't add duplicates
+    if FindWindowIndex(windows, hwnd)
+        return
+
+    ; Append new window
+    windows.Push(hwnd)
+
+    ; Make it the new focus target
+    FocusIndex[desktop] := windows.Length
+}
+
+
+UpdateFocusedWindow(hwnd) {
+    global dll, DesktopWindows, FocusIndex
+
+    if !WinExist("ahk_id " hwnd)
+        return
+
+    desktop := DllCall(
+        dll "\GetWindowDesktopNumber",
+        "Ptr", hwnd,
+        "Int"
+    )
+
+    if !DesktopWindows.Has(desktop)
+        return
+
+    ; Add it if it hasn't been discovered yet
+    index := FindWindowIndex(DesktopWindows[desktop], hwnd)
+
+    if !index {
+        DesktopWindows[desktop].Push(hwnd)
+        index := DesktopWindows[desktop].Length
+    }
+
+    ; Update focus priority
+    FocusIndex[desktop] := index
+}
+
+
+RemoveWindowFromStack(hwnd) {
+    global DesktopWindows, FocusIndex
+
+    for desktop, windows in DesktopWindows {
+        index := FindWindowIndex(windows, hwnd)
+
+        if !index
+            continue
+
+        windows.RemoveAt(index)
+
+        ; Adjust focus index
+        if (windows.Length = 0) {
+            FocusIndex[desktop] := 0
+        } else if (index < FocusIndex[desktop]) {
+            FocusIndex[desktop] -= 1
+        } else if (index = FocusIndex[desktop]) {
+            FocusIndex[desktop] := Min(index, windows.Length)
+        }
+
+        return
+    }
+} 
