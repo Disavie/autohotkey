@@ -1,4 +1,6 @@
 ; switching to numbered desktops
+#NoTrayIcon
+
 #1::SwitchToDesktop(0)
 #2::SwitchToDesktop(1)
 #3::SwitchToDesktop(2)
@@ -191,7 +193,10 @@ PrintDesktopWindows() {
 
 
 #j::CycleWindowFocus(-1) ; previous window
-#k::CycleWindowFocus(1)  ; next window
+$#k::{
+    CycleWindowFocus(1)  ; next window
+    return
+}
 CycleWindowFocus(direction) {
     global DesktopWindows, FocusIndex, CurrentDesktop
 

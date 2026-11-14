@@ -1,5 +1,6 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
+#NoTrayIcon
 
 ; ==========================================
 ; Virtual Desktop Overlay
@@ -72,9 +73,12 @@ CheckFullscreen() {
             continue
 
         ; Ignore minimized windows
-        if WinGetMinMax("ahk_id " hwnd) = -1
+        try {
+            if (WinGetMinMax("ahk_id " hwnd) = -1)
+                continue
+        } catch {
             continue
-
+        }
         ; Ignore our own overlay
         if (hwnd = DesktopIndicator.Hwnd)
             continue

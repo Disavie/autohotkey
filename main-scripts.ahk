@@ -1,4 +1,5 @@
 #Requires AutoHotkey v2.0
+#NoTrayIcon
 #o::Send "#{Tab}"
 #Enter::
 {
@@ -6,7 +7,13 @@
     WinWait "ahk_exe WindowsTerminal.exe"
     WinActivate "ahk_exe WindowsTerminal.exe"
 }
-#Q::Send "!{F4}"
+#q::
+{
+    if WinExist("ahk_exe Taskmgr.exe")
+        WinClose("ahk_exe Taskmgr.exe")
+    else
+        Send("!{F4}")
+}
 #F::Send "{F11}"
 #e::
 {
