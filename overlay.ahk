@@ -18,12 +18,12 @@ DllCall("LoadLibrary", "Str", dll, "Ptr")
 global DesktopIndicator := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")
 DesktopIndicator.BackColor := "20242B"
 
-DesktopIndicator.SetFont("s10 cA0A8B5", "Segoe UI")
-DesktopIndicator.AddText("x10 y7 w100 h20 Center", "DESKTOP")
+DesktopIndicator.SetFont("s8 cA0A8B5", "Segoe UI")
+DesktopIndicator.AddText("x6 y4 w78 h15 Center", "DESKTOP")
 
-DesktopIndicator.SetFont("s28 cFFFFFF Bold", "Segoe UI")
+DesktopIndicator.SetFont("s20 cFFFFFF Bold", "Segoe UI")
 global DesktopNumberText := DesktopIndicator.AddText(
-    "x10 y25 w100 h45 Center", "01"
+    "x6 y17 w78 h32 Center", "01"
 )
 ; Find the leftmost monitor
 MonitorGetCount()
@@ -39,11 +39,11 @@ Loop MonitorGetCount() {
 }
 
 ; Position in top-left corner
-IndicatorX := Left 
+IndicatorX := Left
 IndicatorY := Top 
 
 DesktopIndicator.Show(
-    "NA x" IndicatorX " y" IndicatorY " w120 h78"
+    "NA x" IndicatorX " y" IndicatorY " w90 h55"
 )
 
 ; Poll current desktop
