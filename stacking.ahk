@@ -12,6 +12,9 @@ global FocusIndex := Map()
 global CurrentDesktop := 0
 
 DllCall("LoadLibrary", "Str", dll, "Ptr")
+; Launch desktop indicator
+
+Run('"' A_AhkPath '" "' A_ScriptDir '\overlay.ahk"')
 
 DetectHiddenWindows(true)
 
