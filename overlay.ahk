@@ -20,12 +20,24 @@ global DesktopIndicator := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")
 DesktopIndicator.BackColor := "20242B"
 
 DesktopIndicator.SetFont("s8 cA0A8B5", "Segoe UI")
-DesktopIndicator.AddText("x6 y4 w78 h15 Center", "DESKTOP")
+DesktopIndicator.AddText("x6 y2 w84 h15 Left", "WORKSPACE NO.")
 
-DesktopIndicator.SetFont("s20 cFFFFFF Bold", "Segoe UI")
-global DesktopNumberText := DesktopIndicator.AddText(
-    "x6 y17 w78 h32 Center", "01"
-)
+global DesktopLabels := []
+
+Loop 3 {
+    x := 6 + (A_Index - 1) * 28
+
+    DesktopIndicator.SetFont("s10 c707780", "Segoe UI")
+    DesktopLabels.Push(
+        DesktopIndicator.AddText(
+            Format("x{} y19 w24 h18 Center", x),
+            Format("{:02}", A_Index)
+        )
+    )
+}
+
+WinSetTransparent(210, DesktopIndicator)
+
 ; Find the leftmost monitor
 MonitorGetCount()
 MonitorGetWorkArea(1, &Left, &Top, &Right, &Bottom)
@@ -40,11 +52,11 @@ Loop MonitorGetCount() {
 }
 
 ; Position in top-left corner
-IndicatorX := Left
-IndicatorY := Top 
+IndicatorX := Left + 50
+IndicatorY := Top - 40
 
 DesktopIndicator.Show(
-    "NA x" IndicatorX " y" IndicatorY " w90 h55"
+    "NA x" IndicatorX " y" IndicatorY " w100 h40"
 )
 
 ; Poll current desktop
@@ -123,14 +135,20 @@ CheckFullscreen() {
     }
 }
 
-UpdateDesktopIndicator() {
-    global dll, DesktopNumberText
 
-    current := DllCall(
+UpdateDesktopIndicator() {
+    global DesktopLabels, dll
+
+    ; Get current desktop (zero-indexed)
+    active := DllCall(
         dll "\GetCurrentDesktopNumber",
         "Int"
-    )
+    ) + 1
 
-    DesktopNumberText.Text := Format("{:02}", current + 1)
+    for index, label in DesktopLabels {
+        if (index = active)
+            label.SetFont("s10 cFFFFFF Bold", "Segoe UI")
+        else
+            label.SetFont("s10 c707780 Norm", "Segoe UI")
+    }
 }
-
